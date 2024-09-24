@@ -13,20 +13,21 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.0.0
-      - name: Run tests
+          bundler-cache: true
+      - name: Install dependencies
         run: |
-          cd backend
+          gem install bundler
           bundle install
-          bundle exec rspec
+      - name: Run tests
+        run: bundle exec rspec
 
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: akhileshns/heroku-deploy@v3.12.12
-        with:
-          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: benefit
-          heroku_email: skopiirwin@gmail.com
-
+ deploy:
+  needs: test
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v2
+    - uses: akhileshns/heroku-deploy@v3.12.12
+      with:
+        heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+        heroku_app_name: "benefit"  
+        heroku_email: "skopiirwin@gmail.com"
