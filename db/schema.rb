@@ -10,7 +10,28 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_09_24_000700) do
+ActiveRecord::Schema[7.2].define(version: 2024_11_03_165300) do
+  create_table "body_scans", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.float "shoulder_width"
+    t.float "chest_circumference"
+    t.float "waist_circumference"
+    t.float "hip_circumference"
+    t.float "inseam_length"
+    t.float "height"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_body_scans_on_user_id"
+  end
+
+  create_table "clothing_items", force: :cascade do |t|
+    t.string "name"
+    t.string "category"
+    t.json "size_chart"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "jwt_denylists", force: :cascade do |t|
     t.string "jti"
     t.datetime "exp"
@@ -28,7 +49,21 @@ ActiveRecord::Schema[7.2].define(version: 2024_09_24_000700) do
     t.float "hips"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_measurements_on_created_at"
     t.index ["user_id"], name: "index_measurements_on_user_id"
+  end
+
+  create_table "user_measurements", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.float "height"
+    t.float "weight"
+    t.float "chest"
+    t.float "waist"
+    t.float "hips"
+    t.float "inseam"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_user_measurements_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -40,9 +75,28 @@ ActiveRecord::Schema[7.2].define(version: 2024_09_24_000700) do
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
+    t.boolean "allow_password_change", default: false
+    t.string "confirmation_token"
+    t.datetime "confirmed_at"
+    t.datetime "confirmation_sent_at"
+    t.string "unconfirmed_email"
+    t.string "nickname"
+    t.string "image"
+    t.text "tokens"
+    t.string "provider", default: "email", null: false
+    t.string "uid", default: "", null: false
+    t.integer "sign_in_count", default: 0, null: false
+    t.datetime "current_sign_in_at"
+    t.datetime "last_sign_in_at"
+    t.string "current_sign_in_ip"
+    t.string "last_sign_in_ip"
+    t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
+  add_foreign_key "body_scans", "users"
   add_foreign_key "measurements", "users"
+  add_foreign_key "user_measurements", "users"
 end

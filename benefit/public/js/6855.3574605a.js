@@ -1,0 +1,2 @@
+(function(){function s(s,e,t){return{frontResult:`Processed ${s}`,sideResult:`Processed ${e}`,backResult:`Processed ${t}`}}self.onmessage=function(e){const{front:t,side:n,back:o}=e.data,c=s(t,n,o);self.postMessage(c)}})();
+//# sourceMappingURL=6855.3574605a.js.map

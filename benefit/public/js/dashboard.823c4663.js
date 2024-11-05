@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkbenefit"]=self["webpackChunkbenefit"]||[]).push([[945],{43498:function(e,n,a){a.r(n),a.d(n,{default:function(){return s}});var r=a(20641);function u(e,n,a,u,t,c){return(0,r.uX)(),(0,r.CE)("div",null,n[0]||(n[0]=[(0,r.Lk)("h1",null,"Dashboard",-1),(0,r.Lk)("p",null,"Welcome to the user dashboard!",-1)]))}var t={name:"AppDashboard"},c=a(66262);const d=(0,c.A)(t,[["render",u],["__scopeId","data-v-5bcc2d66"]]);var s=d}}]);
+//# sourceMappingURL=dashboard.823c4663.js.map

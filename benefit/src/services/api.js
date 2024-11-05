@@ -1,44 +1,44 @@
+// src/services/api.js
 import axios from 'axios'
 
-const API_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000/api'
+const API_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000'
 
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
+  },
+  withCredentials: true
+})
+
+// Add auth token interceptor
+apiClient.interceptors.request.use(config => {
+  const authHeaders = JSON.parse(localStorage.getItem('auth-headers') || '{}')
+  return {
+    ...config,
+    headers: {
+      ...config.headers,
+      ...authHeaders
+    }
   }
 })
 
 export default {
-  // Users
-  getUsers() {
-    return apiClient.get('/users')
-  },
-  getUser(id) {
-    return apiClient.get(`/users/${id}`)
-  },
-  createUser(user) {
-    return apiClient.post('/users', user)
-  },
-  updateUser(id, user) {
-    return apiClient.put(`/users/${id}`, user)
-  },
-  deleteUser(id) {
-    return apiClient.delete(`/users/${id}`)
-  },
-
   // Measurements
-  getMeasurements(userId) {
-    return apiClient.get(`/users/${userId}/measurements`)
+  getMeasurements() {
+    return apiClient.get('/api/v1/user_measurements')
   },
-  createMeasurement(userId, measurement) {
-    return apiClient.post(`/users/${userId}/measurements`, measurement)
+  getRecentMeasurements() {
+    return apiClient.get('/api/v1/user_measurements/recent')
   },
-  updateMeasurement(userId, measurementId, measurement) {
-    return apiClient.put(`/users/${userId}/measurements/${measurementId}`, measurement)
+  createMeasurement(measurement) {
+    return apiClient.post('/api/v1/user_measurements', { user_measurement: measurement })
   },
-  deleteMeasurement(userId, measurementId) {
-    return apiClient.delete(`/users/${userId}/measurements/${measurementId}`)
+  updateMeasurement(id, measurement) {
+    return apiClient.put(`/api/v1/user_measurements/${id}`, { user_measurement: measurement })
+  },
+  deleteMeasurement(id) {
+    return apiClient.delete(`/api/v1/user_measurements/${id}`)
   }
 }

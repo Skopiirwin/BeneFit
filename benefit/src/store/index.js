@@ -1,14 +1,12 @@
-import { createStore } from 'vuex'
+import { createStore } from 'vuex';
+import auth from './modules/auth';
+import measurements from './modules/measurements';
+import clothingItems from './modules/clothingItems';
 
 export default createStore({
-  state: {
-  },
-  getters: {
-  },
-  mutations: {
-  },
-  actions: {
-  },
   modules: {
-  }
-})
+    auth,
+    measurements,
+    clothingItems,
+  },
+});

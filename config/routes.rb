@@ -1,25 +1,32 @@
+# config/routes.rb
 Rails.application.routes.draw do
-  devise_for :users, controllers: {
-    sessions: 'users/sessions',
-    registrations: 'users/registrations'
-  }
+  scope :api, defaults: { format: :json } do
+    mount_devise_token_auth_for 'User', at: 'auth', controllers: {
+      registrations: 'users/registrations',
+      sessions: 'users/sessions'
+    }
 
-  namespace :api do
-    resources :users
-    resources :measurements
+    namespace :api do
+      namespace :v1 do
+        resources :user_measurements do
+          collection do
+            get :recent
+          end
+        end
+        resources :clothing_items do
+          member do
+            get 'recommend_size'
+          end
+        end
+        resources :body_scans, only: [:create]
+      end
+    end
   end
 
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  get '/health', to: 'application#health'
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
-
-  # Render dynamic PWA files from app/views/pwa/*
-  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-
-  # Defines the root path route ("/")
-  # root "posts#index"
-  root 'application#index'
+  # Catch-all route for the Vue.js frontend
+  get '*path', to: 'application#frontend_index_html', constraints: ->(request) {
+    !request.xhr? && request.format.html?
+  }
 end

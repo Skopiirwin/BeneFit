@@ -1,6 +1,8 @@
 class ApplicationController < ActionController::Base
+  include DeviseTokenAuth::Concerns::SetUserByToken
   protect_from_forgery with: :null_session
-  def index
-    render json: { message: "Welcome to the BeneFit API" }
+
+  def frontend_index_html
+    render file: Rails.root.join('public', 'index.html')
   end
 end

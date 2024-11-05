@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  shoulder_width: 1.5
+  chest_circumference: 1.5
+  waist_circumference: 1.5
+  hip_circumference: 1.5
+  inseam_length: 1.5
+  height: 1.5
+
+two:
+  user: two
+  shoulder_width: 1.5
+  chest_circumference: 1.5
+  waist_circumference: 1.5
+  hip_circumference: 1.5
+  inseam_length: 1.5
+  height: 1.5

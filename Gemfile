@@ -43,6 +43,9 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Add dotenv-rails gem for managing environment variables
+  gem 'dotenv-rails'
 end
 
 group :development do
@@ -55,7 +58,16 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
 gem 'active_model_serializers', '~> 0.10.0'
 gem 'rack-cors'
 gem "devise", "~> 4.9"
 gem "devise-jwt", "~> 0.12.1"
+gem 'devise_token_auth', github: 'lynndylanhurley/devise_token_auth', branch: 'master'
+gem 'omniauth'
+gem 'omniauth-facebook'
+gem 'omniauth-google-oauth2'
+# gem 'ruby-opencv', '~> 0.0.18', require: 'opencv'
+gem 'aws-sdk-s3', '~> 1.114'
+
+

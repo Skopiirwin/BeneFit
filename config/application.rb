@@ -1,27 +1,40 @@
 require_relative "boot"
-
 require "rails/all"
-
-# Require the gems listed in Gemfile, including any gems
-# you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
 module BeneFit
   class Application < Rails::Application
-    # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.2
-
-    # Please, add to the `ignore` list any other `lib` subdirectories that do
-    # not contain `.rb` files, or that should not be reloaded or eager loaded.
-    # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
+    
+    # CORS Configuration
+    config.middleware.use Rack::Cors do
+      allow do
+        origins 'http://localhost:8080'
+        resource '*',
+          headers: :any,
+          expose: ['access-token', 'expiry', 'token-type', 'uid', 'client'],
+          methods: [:get, :post, :options, :delete, :put, :patch],
+          credentials: true
+      end
+    end
 
-    # Configuration for the application, engines, and railties goes here.
-    #
-    # These settings can be overridden in specific environments using the files
-    # in config/environments, which are processed later.
-    #
-    # config.time_zone = "Central Time (US & Canada)"
-    # config.eager_load_paths << Rails.root.join("extras")
+    # Security configurations
+    config.action_controller.forgery_protection_origin_check = false
+    
+    # Session configuration
+    config.session_store :cookie_store, 
+                        key: '_benefit_session', 
+                        same_site: :none, 
+                        secure: Rails.env.production?
+                        
+    config.action_dispatch.cookies_same_site_protection = :none
+
+    # Add default headers
+    config.action_dispatch.default_headers = {
+      'Access-Control-Allow-Credentials' => 'true',
+      'Access-Control-Allow-Headers' => 'accept, content-type, authorization, uid, client, access-token',
+      'Access-Control-Expose-Headers' => 'access-token, client, expiry, token-type, uid'
+    }
   end
 end
