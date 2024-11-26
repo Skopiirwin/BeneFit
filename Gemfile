@@ -68,6 +68,6 @@ gem 'omniauth'
 gem 'omniauth-facebook'
 gem 'omniauth-google-oauth2'
 # gem 'ruby-opencv', '~> 0.0.18', require: 'opencv'
-gem 'aws-sdk-s3', '~> 1.114'
+gem 'aws-sdk-s3', '~> 1.174'
 
 
