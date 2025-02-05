@@ -1,0 +1,382 @@
+# swagger/v1/swagger.yaml
+openapi: 3.0.1
+info:
+  title: BeneFit API Documentation
+  version: 'v1'
+  description: |
+    API documentation for BeneFit's measurement services.
+    Includes endpoints for clothing, eyewear, footwear, and accessory measurements.
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+components:
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  examples:
+    MeasurementResponse:
+      value:
+        status: 'success'
+        data:
+          id: 1
+          measurement_type: 'eyewear'
+          face_width: 14.2
+          temple_length: 13.8
+          bridge_width: 2.3
+          face_shape: 'oval'
+          created_at: '2024-11-07T10:00:00Z'
+        meta:
+          measurement_type: 'eyewear'
+          confidence_score: 95
+    ErrorResponse:
+      value:
+        status: 'error'
+        message: 'Validation failed'
+        errors:
+          face_shape: ['is not included in the list']
+    PaginatedResponse:
+      value:
+        status: 'success'
+        data: [
+          {
+            id: 1,
+            measurement_type: 'eyewear',
+            face_width: 14.2
+          }
+        ]
+        meta:
+          total_count: 50
+          total_pages: 5
+          current_page: 1
+          per_page: 10
+
+  schemas:
+    Measurement:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        height:
+          type: number
+          format: float
+        weight:
+          type: number
+          format: float
+        measurement_type:
+          type: string
+          enum: [clothing, eyewear, footwear, accessory]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EyewearMeasurement:
+      allOf:
+        - $ref: '#/components/schemas/Measurement'
+        - type: object
+          properties:
+            face_width:
+              type: number
+              format: float
+            temple_length:
+              type: number
+              format: float
+            bridge_width:
+              type: number
+              format: float
+            face_shape:
+              type: string
+              enum: [oval, round, square, heart, diamond, triangle]
+            frame_recommendations:
+              type: array
+              items:
+                type: string
+
+    FootwearMeasurement:
+      allOf:
+        - $ref: '#/components/schemas/Measurement'
+        - type: object
+          properties:
+            foot_length:
+              type: number
+              format: float
+            foot_width:
+              type: number
+              format: float
+            arch_height:
+              type: number
+              format: float
+            arch_type:
+              type: string
+              enum: [low, medium, high]
+            shoe_sizes:
+              type: object
+              properties:
+                us:
+                  type: number
+                eu:
+                  type: integer
+                uk:
+                  type: number
+
+    AccessoryMeasurement:
+      allOf:
+        - $ref: '#/components/schemas/Measurement'
+        - type: object
+          properties:
+            wrist_circumference:
+              type: number
+              format: float
+            wrist_width:
+              type: number
+              format: float
+            watch_size_recommendation:
+              type: object
+              properties:
+                category:
+                  type: string
+                  enum: [small, medium, large]
+                sizes:
+                  type: string
+
+paths:
+  /measurements:
+    get:
+      summary: List all measurements
+      security:
+        - Bearer: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [clothing, eyewear, footwear, accessory]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of measurements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Measurement'
+              examples:
+                paginated:
+                  $ref: '#/components/schemas/PaginatedResponse'
+
+  /eyewear_measurements:
+    post:
+      summary: Create new eyewear measurement
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                measurement:
+                  $ref: '#/components/schemas/EyewearMeasurement'
+      responses:
+        '201':
+          description: Eyewear measurement created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EyewearMeasurement'
+              examples:
+                success:
+                  $ref: '#/components/examples/MeasurementResponse'
+        '422':
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+              examples:
+                error:
+                  $ref: '#/components/examples/ErrorResponse'
+
+    get:
+      summary: List eyewear measurements
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: List of eyewear measurements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EyewearMeasurement'
+              examples:
+                paginated:
+                  $ref: '#/components/examples/PaginatedResponse'
+
+  /footwear_measurements:
+    post:
+      summary: Create new footwear measurement
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                measurement:
+                  $ref: '#/components/schemas/FootwearMeasurement'
+      responses:
+        '201':
+          description: Footwear measurement created
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: '#/components/examples/MeasurementResponse'
+        '422':
+          description: Validation errors
+          content:
+            application/json:
+              examples:
+                error:
+                  $ref: '#/components/examples/ErrorResponse'
+
+  /accessory_measurements:
+    post:
+      summary: Create new accessory measurement
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                measurement:
+                  $ref: '#/components/schemas/AccessoryMeasurement'
+      responses:
+        '201':
+          description: Accessory measurement created
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: '#/components/examples/MeasurementResponse'
+        '422':
+          description: Validation errors
+          content:
+            application/json:
+              examples:
+                error:
+                  $ref: '#/components/examples/ErrorResponse'
+
+  /measurements/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Get measurement by ID
+      security:
+        - Bearer: []
+      responses:
+        '200':
+          description: Measurement details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Measurement'
+              examples:
+                success:
+                  $ref: '#/components/examples/MeasurementResponse'
+        '404':
+          description: Measurement not found
+          content:
+            application/json:
+              examples:
+                error:
+                  $ref: '#/components/examples/ErrorResponse'
+
+    put:
+      summary: Update measurement
+      security:
+        - Bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                measurement:
+                  $ref: '#/components/schemas/Measurement'
+      responses:
+        '200':
+          description: Measurement updated
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: '#/components/examples/MeasurementResponse'
+        '422':
+          description: Validation errors
+          content:
+            application/json:
+              examples:
+                error:
+                  $ref: '#/components/examples/ErrorResponse'
+
+    delete:
+      summary: Delete measurement
+      security:
+        - Bearer: []
+      responses:
+        '204':
+          description: Measurement deleted
+
+  /measurements/recent:
+    get:
+      summary: Get recent measurements
+      security:
+        - Bearer: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [clothing, eyewear, footwear, accessory]
+      responses:
+        '200':
+          description: List of recent measurements
+          content:
+            application/json:
+              examples:
+                success:
+                  $ref: '#/components/examples/PaginatedResponse'

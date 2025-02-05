@@ -1,4 +1,3 @@
-// src/store/modules/auth.js
 export default {
   namespaced: true,
   
@@ -6,14 +5,16 @@ export default {
     user: JSON.parse(localStorage.getItem('user')) || null,
     loading: false,
     error: null,
-    isAuthenticated: false
+    isAuthenticated: false,
+    checkingAuth: false
   },
 
   getters: {
     isAuthenticated: state => state.isAuthenticated,
     currentUser: state => state.user,
     isLoading: state => state.loading,
-    error: state => state.error
+    error: state => state.error,
+    isCheckingAuth: state => state.checkingAuth
   },
 
   mutations: {
@@ -32,52 +33,78 @@ export default {
     SET_ERROR(state, error) {
       state.error = error;
     },
-    SET_AUTHENTICATED(state, isAuthenticated) {
-      state.isAuthenticated = isAuthenticated;
+    SET_CHECKING_AUTH(state, status) {
+      state.checkingAuth = status;
+    },
+    CLEAR_AUTH_STATE(state) {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.error = null;
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth-headers');
     }
   },
 
   actions: {
+    async checkAuth({ commit }) {
+      try {
+        const response = await this.$axios.get('/api/v1/user_measurements/recent');
+        return response.status === 200;
+      } catch (error) {
+        commit('CLEAR_AUTH_STATE');
+        return false;
+      }
+    },
+
     async login({ commit }, credentials) {
       commit('SET_LOADING', true);
       commit('SET_ERROR', null);
       
       try {
-        const response = await this.$axios.post('/auth/sign_in', { 
-          session: {
-            user: {
-              email: credentials.email,
-              password: credentials.password
-            }
-          }
-        });
-
+        const response = await this.$axios.post('/api/auth/sign_in', { user: credentials });
+        
         if (response.headers['access-token']) {
           const authHeaders = {
             'access-token': response.headers['access-token'],
-            'token-type': response.headers['token-type'],
-            'client': response.headers['client'],
-            'expiry': response.headers['expiry'],
-            'uid': response.headers['uid']
+            'client': response.headers.client,
+            'uid': response.headers.uid
           };
           localStorage.setItem('auth-headers', JSON.stringify(authHeaders));
         }
-
-        if (response.data?.status === 'success' && response.data.data?.user) {
-          const userData = response.data.data.user;
-          commit('SET_USER', userData);
-          commit('SET_AUTHENTICATED', true);
-          return response.data;
-        } else {
-          throw new Error(response.data?.errors?.[0] || 'Login failed');
-        }
+        
+        commit('SET_USER', response.data.data.user);
+        return { status: 'success', data: response.data.data };
       } catch (error) {
-        commit('SET_USER', null);
-        commit('SET_AUTHENTICATED', false);
-        const errorMessage = error.response?.data?.errors?.[0] || 
-                           error.message || 
-                           'Login failed';
-        commit('SET_ERROR', errorMessage);
+        console.error('Login error:', error);
+        commit('SET_ERROR', error.response?.data?.status?.message || 'Authentication failed');
+        commit('CLEAR_AUTH_STATE');
+        throw error;
+      } finally {
+        commit('SET_LOADING', false);
+      }
+    },
+    
+    async register({ commit }, userData) {
+      commit('SET_LOADING', true);
+      commit('SET_ERROR', null);
+      
+      try {
+        const response = await this.$axios.post('/api/auth', { user: userData });
+        
+        if (response.headers['access-token']) {
+          const authHeaders = {
+            'access-token': response.headers['access-token'],
+            'client': response.headers.client,
+            'uid': response.headers.uid
+          };
+          localStorage.setItem('auth-headers', JSON.stringify(authHeaders));
+        }
+        
+        commit('SET_USER', response.data.data.user);
+        return { status: 'success', data: response.data.data };
+      } catch (error) {
+        console.error('Registration error:', error);
+        commit('SET_ERROR', error.message);
         throw error;
       } finally {
         commit('SET_LOADING', false);
@@ -85,30 +112,20 @@ export default {
     },
 
     async logout({ commit }) {
+      commit('SET_LOADING', true);
+      
       try {
-        const headers = JSON.parse(localStorage.getItem('auth-headers') || '{}');
-        await this.$axios.delete('/auth/sign_out', { headers });
+        await this.$axios.delete('/api/auth/sign_out');
       } catch (error) {
         console.error('Logout error:', error);
       } finally {
-        commit('SET_USER', null);
-        commit('SET_AUTHENTICATED', false);
-        localStorage.removeItem('auth-headers');
+        commit('CLEAR_AUTH_STATE');
+        commit('SET_LOADING', false);
       }
     },
 
-    // Check authentication status
-    async checkAuth({ commit }) {
-      const authHeaders = localStorage.getItem('auth-headers');
-      const userData = localStorage.getItem('user');
-      
-      if (authHeaders && userData) {
-        commit('SET_USER', JSON.parse(userData));
-        commit('SET_AUTHENTICATED', true);
-      } else {
-        commit('SET_USER', null);
-        commit('SET_AUTHENTICATED', false);
-      }
+    clearError({ commit }) {
+      commit('SET_ERROR', null);
     }
   }
 }

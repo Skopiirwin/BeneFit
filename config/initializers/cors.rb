@@ -4,16 +4,8 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     
     resource '*',
       headers: :any,
-      expose: [
-        'access-token', 
-        'expiry', 
-        'token-type', 
-        'uid', 
-        'client',
-        'Authorization'
-      ],
-      methods: [:get, :post, :put, :patch, :delete, :options],
-      credentials: true,
-      max_age: 86400
+      methods: [:get, :post, :put, :patch, :delete, :options, :head],
+      expose: ['access-token', 'expiry', 'token-type', 'uid', 'client'],
+      credentials: true
   end
 end

@@ -1,94 +1,238 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import store from '../store';
 
-const HomeView = () => import(/* webpackChunkName: "home" */ '../views/HomeView.vue');
-const AuthForm = () => import(/* webpackChunkName: "auth" */ '../components/AuthForm.vue');
-const AppDashboard = () => import(/* webpackChunkName: "dashboard" */ '../views/AppDashboard.vue');
-const UserMeasurements = () => import(/* webpackChunkName: "measurements" */ '../components/UserMeasurements.vue');
-const BodyScanComponent = () => import(/* webpackChunkName: "bodyscan" */ '../components/BodyScanComponent.vue');
-const SizeRecommendationComponent = () => import(/* webpackChunkName: "sizerecommendation" */ '../components/ClothingItems.vue');
-const MeasurementProcess = () => import(/* webpackChunkName: "measurementprocess" */ '../components/MeasurementProcess.vue');
-const AboutView = () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue');
+// Main Views
+const HomeView = () => import('@/views/HomeView.vue');
+const AuthForm = () => import('@/components/AuthForm.vue');
+const AppDashboard = () => import('@/views/AppDashboard.vue');
+const AboutView = () => import('@/views/AboutView.vue');
+const NotFound = () => import('@/views/NotFound.vue');
+
+// Measurement Process and Steps
+const MeasurementProcess = () => import('@/components/measurements/MeasurementProcess.vue');
+const InitialSetupStep = () => import('@/components/measurements/steps/InitialSetupStep.vue');
+const CalibrationStep = () => import('@/components/measurements/steps/CalibrationStep.vue');
+const ProcessingStep = () => import('@/components/measurements/steps/ProcessingStep.vue');
+const ResultsStep = () => import('@/components/measurements/steps/ResultsStep.vue');
+const CompletionStep = () => import('@/components/measurements/steps/CompletionStep.vue');
+
+// Measurement Types
+const EyewearMeasurement = () => import('@/components/measurements/types/eyewear/EyewearMeasurement.vue');
+const FootwearMeasurement = () => import('@/components/measurements/types/footwear/FootwearMeasurement.vue');
+const AccessoryMeasurement = () => import('@/components/measurements/types/accessory/AccessoryMeasurement.vue');
+
+const measurementGuard = async (to, from, next) => {
+  const currentStep = store.state.measurements.currentStep;
+  const hasType = store.state.measurements.selectedType;
+  const isCalibrated = store.state.measurements.isCalibrated;
+  const hasMeasurements = store.state.measurements.currentMeasurement;
+
+  // Always allow access to type selection
+  if (to.name === 'measurement-type-selection') {
+    next();
+    return;
+  }
+
+  // Check for measurement type
+  if (!hasType && to.name !== 'measurement-type-selection') {
+    next({ name: 'measurement-type-selection' });
+    return;
+  }
+
+  // Define step order
+  const stepOrder = {
+    'measurement-type-selection': 0,
+    'measurement-calibration': 1,
+    'eyewear-measurement': 2,
+    'footwear-measurement': 2,
+    'accessory-measurement': 2,
+    'measurement-processing': 3,
+    'measurement-results': 4,
+    'measurement-completion': 5
+  };
+
+  const targetStep = stepOrder[to.name];
+
+  // Prevent skipping steps
+  if (targetStep > currentStep + 1) {
+    next(false);
+    return;
+  }
+
+  // Check calibration requirement
+  if (targetStep >= 2 && !isCalibrated && to.name !== 'measurement-calibration') {
+    next({ name: 'measurement-calibration' });
+    return;
+  }
+
+  // Check measurements requirement
+  if (targetStep >= 3 && !hasMeasurements) {
+    next({ name: 'measurement-type-selection' });
+    return;
+  }
+
+  next();
+};
 
 const routes = [
   {
     path: '/',
-    name: 'HomeView',
-    component: HomeView,
-  },
-  {
-    path: '/about',
-    name: 'About',
-    component: AboutView
+    name: 'home',
+    component: HomeView
   },
   {
     path: '/auth',
-    name: 'Auth',
+    name: 'auth',
     component: AuthForm,
-    meta: { requiresGuest: true }, // Prevent authenticated users from accessing auth page
+    meta: { requiresGuest: true }
   },
   {
     path: '/dashboard',
-    name: 'AppDashboard',
+    name: 'dashboard',
     component: AppDashboard,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true }
   },
   {
-    path: '/measurements',
-    name: 'Measurements',
-    component: UserMeasurements,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/body-scan',
-    name: 'BodyScan',
-    component: BodyScanComponent,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/size-recommendation',
-    name: 'SizeRecommendation',
-    component: SizeRecommendationComponent,
-    meta: { requiresAuth: true },
+    path: '/about',
+    name: 'about',
+    component: AboutView
   },
   {
     path: '/measurement-process',
-    name: 'MeasurementProcess',
     component: MeasurementProcess,
     meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'measurement-type-selection',
+        component: InitialSetupStep,
+        meta: { step: 0 }
+      },
+      {
+        path: 'calibration',
+        name: 'measurement-calibration',
+        component: CalibrationStep,
+        meta: { 
+          step: 1,
+          requiresType: true
+        }
+      },
+      {
+        path: 'eyewear',
+        name: 'eyewear-measurement',
+        component: EyewearMeasurement,
+        meta: { 
+          step: 2,
+          requiresType: true,
+          requiresCalibration: true,
+          measurementType: 'eyewear'
+        }
+      },
+      {
+        path: 'footwear',
+        name: 'footwear-measurement',
+        component: FootwearMeasurement,
+        meta: { 
+          step: 2,
+          requiresType: true,
+          requiresCalibration: true,
+          measurementType: 'footwear'
+        }
+      },
+      {
+        path: 'accessory',
+        name: 'accessory-measurement',
+        component: AccessoryMeasurement,
+        meta: { 
+          step: 2,
+          requiresType: true,
+          requiresCalibration: true,
+          measurementType: 'accessory'
+        }
+      },
+      {
+        path: 'processing',
+        name: 'measurement-processing',
+        component: ProcessingStep,
+        meta: { 
+          step: 3,
+          requiresType: true,
+          requiresCalibration: true,
+          requiresMeasurements: true
+        }
+      },
+      {
+        path: 'results',
+        name: 'measurement-results',
+        component: ResultsStep,
+        meta: { 
+          step: 4,
+          requiresType: true,
+          requiresCalibration: true,
+          requiresMeasurements: true
+        }
+      },
+      {
+        path: 'completion',
+        name: 'measurement-completion',
+        component: CompletionStep,
+        meta: { 
+          step: 5,
+          requiresType: true,
+          requiresCalibration: true,
+          requiresMeasurements: true
+        }
+      }
+    ],
+    beforeEnter: measurementGuard
   },
   {
-    path: '/measurements/new',
-    name: 'NewMeasurement',
-    component: () => import('../views/NewMeasurement.vue'),
-    meta: { requiresAuth: true }
-  },
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: NotFound
+  }
 ];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
-  routes,
+  routes
 });
 
-// Enhanced navigation guard
+// Global navigation guard
 router.beforeEach(async (to, from, next) => {
-  // Try to restore auth state from localStorage
-  await store.dispatch('auth/checkAuth');
+  if (from.name === to.name) {
+    next(false);
+    return;
+  }
   
-  const isAuthenticated = store.getters['auth/isAuthenticated'];
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  const requiresGuest = to.matched.some(record => record.meta.requiresGuest);
+  try {
+    await store.dispatch('auth/checkAuth');
+    const isAuthenticated = store.getters['auth/isAuthenticated'];
 
-  if (requiresAuth && !isAuthenticated) {
-    // Save the intended destination
-    next({ 
-      name: 'Auth', 
-      query: { redirect: to.fullPath } 
-    });
-  } else if (requiresGuest && isAuthenticated) {
-    next({ name: 'AppDashboard' });
-  } else {
+    // Auth route protection
+    if (to.meta.requiresAuth && !isAuthenticated) {
+      next({ 
+        name: 'auth', 
+        query: { redirect: to.fullPath } 
+      });
+      return;
+    }
+
+    // Guest route protection
+    if (to.meta.requiresGuest && isAuthenticated) {
+      next({ name: 'dashboard' });
+      return;
+    }
+
+    // Reset measurement process when leaving it
+    if (from.path.startsWith('/measurement-process') && !to.path.startsWith('/measurement-process')) {
+      await store.dispatch('measurements/resetMeasurementProcess');
+    }
+
     next();
+  } catch (error) {
+    console.error('Navigation error:', error);
+    next({ name: 'not-found' });
   }
 });
 

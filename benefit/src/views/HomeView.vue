@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <h1 class="title">Welcome to BeneFit</h1>
+    <h1 class="title">WELCOME TO BENEFIT</h1>
     <div class="content">
       <section class="hero">
         <h2 class="subtitle">Get Your Perfect Fit</h2>
@@ -19,37 +19,59 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
 
 export default {
   name: 'HomeView',
   setup() {
-    const isLoading = ref(false)
-    const buttonText = ref('Start Measurement')
+    const router = useRouter();
+    const store = useStore();
+    const isLoading = ref(false);
+    const buttonText = ref('Start Measurement');
 
-    const handleClick = () => {
-      isLoading.value = true
-      buttonText.value = 'Loading...'
+    const handleClick = async () => {
+      isLoading.value = true;
+      buttonText.value = 'Loading...';
       
-      // Reset after navigation (in case user comes back)
-      setTimeout(() => {
-        isLoading.value = false
-        buttonText.value = 'Start Measurement'
-      }, 500)
-    }
+      try {
+        // Reset any previous measurement state
+        await store.dispatch('measurements/resetMeasurementProcess');
+        
+        // Check authentication state
+        const isAuthenticated = store.getters['auth/isAuthenticated'];
+        
+        if (!isAuthenticated) {
+          // If not authenticated, redirect to auth page
+          await router.push({ 
+            name: 'auth', // lowercase to match route definition
+            query: { redirect: '/measurement-process' } 
+          });
+        } else {
+          // If authenticated, go directly to measurement process
+          await router.push('/measurement-process');
+        }
+      } catch (error) {
+        console.error('Navigation error:', error);
+        isLoading.value = false;
+        buttonText.value = 'Start Measurement';
+      } finally {
+        isLoading.value = false;
+      }
+    };
 
     onMounted(() => {
-      // Any initialization logic can go here
-      console.log('HomeView component mounted')
-    })
+      console.log('HomeView component mounted');
+    });
 
     return {
       isLoading,
       buttonText,
       handleClick
-    }
+    };
   }
-}
+};
 </script>
 
 <style scoped>

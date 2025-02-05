@@ -17,7 +17,8 @@ module Api
                                   .order(created_at: :desc)
                                   .limit(5)
         render json: {
-          measurements: ActiveModel::SerializableResource.new(@measurements, each_serializer: UserMeasurementSerializer),
+          measurements: ActiveModelSerializers::SerializableResource.new(@measurements, 
+            each_serializer: UserMeasurementSerializer),
           stats: calculate_stats
         }
       end

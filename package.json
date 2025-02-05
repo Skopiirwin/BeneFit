@@ -8,6 +8,9 @@
           "lint": "vue-cli-service lint"
      },
      "dependencies": {
+          "@mediapipe/camera_utils": "^0.3.1675466862",
+          "@mediapipe/drawing_utils": "^0.3.1675466124",
+          "@mediapipe/pose": "^0.5.1675469404",
           "@tensorflow/tfjs-backend-webgl": "^4.21.0",
           "@tensorflow/tfjs-core": "^4.21.0",
           "aws-sdk": "^2.1691.0",

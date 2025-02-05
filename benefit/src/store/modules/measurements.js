@@ -1,82 +1,92 @@
-import axiosInstance from '../../utils/axios';
-
-const state = {
-  measurements: [],
-  currentMeasurement: null,
-};
-
-const getters = {
-  allMeasurements: state => state.measurements,
-  currentMeasurement: state => state.currentMeasurement,
-};
-
-const actions = {
-  async fetchMeasurements({ commit }) {
-    try {
-      const response = await axiosInstance.get('/api/v1/user_measurements');
-      commit('setMeasurements', response.data);
-    } catch (error) {
-      console.error('Error fetching measurements:', error);
-      throw error;
-    }
-  },
-
-  async createMeasurement({ commit }, measurementData) {
-    try {
-      const response = await axiosInstance.post('/api/v1/user_measurements', measurementData);
-      commit('addMeasurement', response.data);
-    } catch (error) {
-      console.error('Error creating measurement:', error);
-      throw error;
-    }
-  },
-
-  async updateMeasurement({ commit }, { id, measurementData }) {
-    try {
-      const response = await axiosInstance.put(`/api/v1/user_measurements/${id}`, measurementData);
-      commit('updateMeasurement', response.data);
-    } catch (error) {
-      console.error('Error updating measurement:', error);
-      throw error;
-    }
-  },
-
-  async deleteMeasurement({ commit }, id) {
-    try {
-      await axiosInstance.delete(`/api/v1/user_measurements/${id}`);
-      commit('removeMeasurement', id);
-    } catch (error) {
-      console.error('Error deleting measurement:', error);
-      throw error;
-    }
-  },
-};
-
-const mutations = {
-  setMeasurements(state, measurements) {
-    state.measurements = measurements;
-  },
-  addMeasurement(state, measurement) {
-    state.measurements.push(measurement);
-  },
-  updateMeasurement(state, updatedMeasurement) {
-    const index = state.measurements.findIndex(m => m.id === updatedMeasurement.id);
-    if (index !== -1) {
-      state.measurements.splice(index, 1, updatedMeasurement);
-    }
-  },
-  removeMeasurement(state, id) {
-    state.measurements = state.measurements.filter(m => m.id !== id);
-  },
-  setCurrentMeasurement(state, measurement) {
-    state.currentMeasurement = measurement;
-  },
-};
+import { measurementService } from '@/services/measurements';
 
 export default {
   namespaced: true,
-  state,
-  getters,
-  actions,
-  mutations,
+  
+  state: {
+    measurements: [],
+    currentMeasurement: null,
+    selectedType: null,
+    cameraReady: false,
+    currentStep: 0,
+    calibrationData: null,
+    error: null,
+    isLoading: false,
+  },
+
+  getters: {
+    getAllMeasurements: state => state.measurements,
+    getCurrentMeasurement: state => state.currentMeasurement,
+    getSelectedType: state => state.selectedType,
+    getCalibrationStatus: state => state.calibrationData !== null,
+    getCurrentStep: state => state.currentStep,
+    getCameraReady: state => state.cameraReady
+  },
+
+  actions: {
+    async updateCameraState({ commit }, status) {
+      commit('SET_CAMERA_READY', status);
+    },
+    async getRecentMeasurements({ commit }) {
+      try {
+        commit('SET_LOADING', true);
+        const response = await measurementService.getRecent();
+        return response;
+      } catch (error) {
+        commit('SET_ERROR', error.message);
+        throw error;
+      } finally {
+        commit('SET_LOADING', false);
+      }
+    },
+    async selectMeasurementType({ commit }, type) {
+      commit('SET_SELECTED_TYPE', type);
+    },
+    async setCalibration({ commit }, data) {
+      commit('SET_CALIBRATION_DATA', data);
+    },
+
+    async setStep({ commit }, step) {
+      commit('SET_STEP', step);
+    },
+
+    resetMeasurementProcess({ commit }) {
+      commit('RESET_STATE');
+    },
+  },
+
+  mutations: {
+    SET_CAMERA_READY(state, status) {
+      state.cameraReady = status;
+      console.log('Camera Ready State Updated:', status); // Debug log
+    },
+    SET_MEASUREMENTS(state, measurements) {
+      state.measurements = measurements;
+    },
+    SET_CURRENT_MEASUREMENT(state, measurement) {
+      state.currentMeasurement = measurement;
+    },
+    SET_SELECTED_TYPE(state, type) {
+      state.selectedType = type;
+    },
+    SET_LOADING(state, status) {
+      state.isLoading = status;
+    },
+    SET_ERROR(state, error) {
+      state.error = error;
+    },
+    SET_STEP(state, step) {
+      state.currentStep = step;
+    },
+    SET_CALIBRATION_DATA(state, data) {
+      state.calibrationData = data;
+    },
+    RESET_STATE(state) {
+      state.currentMeasurement = null;
+      state.selectedType = null;
+      state.cameraReady = false;
+      state.currentStep = 0;
+      state.calibrationData = null;
+    }
+  }
 };

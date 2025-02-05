@@ -28,9 +28,9 @@ module.exports = defineConfig({
     const baseConfig = {
       plugins: [
         new webpack.DefinePlugin({
-          __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
-          __VUE_OPTIONS_API__: JSON.stringify(true),
-          __VUE_PROD_DEVTOOLS__: JSON.stringify(process.env.NODE_ENV === 'development')
+          __VUE_PROD_DEVTOOLS__: false,
+          __VUE_OPTIONS_API__: true,
+          'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
         }),
         
         new MiniCssExtractPlugin({
@@ -40,12 +40,20 @@ module.exports = defineConfig({
       ],
 
       optimization: {
-        splitChunks: {
+        splitChunks: process.env.NODE_ENV === 'production' ? {
           chunks: 'all',
           minSize: 20000,
           maxSize: 250000,
           cacheGroups: {
-            vendor: {
+            tensorflow: {
+              test: /[\\/]node_modules[\\/]@tensorflow/,
+              name: 'tensorflow',
+              chunks: 'all',
+              priority: 10,
+              enforce: true,
+              reuseExistingChunk: true
+            },
+            vendors: {
               test: /[\\/]node_modules[\\/]/,
               name(module) {
                 const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
@@ -59,7 +67,7 @@ module.exports = defineConfig({
               reuseExistingChunk: true,
             },
           },
-        },
+        } : false,
       },
 
       resolve: {
@@ -77,13 +85,17 @@ module.exports = defineConfig({
     if (process.env.NODE_ENV === 'development') {
       baseConfig.devtool = 'source-map';
       baseConfig.optimization.minimize = false;
-      
-      baseConfig.plugins.push(
-        new BundleAnalyzerPlugin({
-          analyzerMode: 'static',
-          openAnalyzer: false,
-        })
-      );
+
+      // Only analyze bundles if explicitly requested
+      if (process.env.ANALYZE) {
+        baseConfig.plugins.push(
+          new BundleAnalyzerPlugin({
+            analyzerMode: 'static',
+            openAnalyzer: false,
+            reportFilename: '../bundle-report.html'
+          })
+        );
+      }
     }
 
     if (process.env.NODE_ENV === 'production') {

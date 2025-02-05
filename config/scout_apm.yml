@@ -1,0 +1,3 @@
+# config/scout_apm.yml
+common: &defaults
+  monitor: true

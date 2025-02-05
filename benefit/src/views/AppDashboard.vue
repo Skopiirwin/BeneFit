@@ -141,7 +141,7 @@
 import { ref, onMounted } from 'vue'
 import { mapGetters } from 'vuex'
 import { ScaleIcon, ChartBarIcon, ClockIcon, UserIcon } from '@heroicons/vue/24/outline'
-import measurementsService from '@/services/measurements'
+import { measurementService } from '@/services/measurements'
 
 export default {
   name: 'AppDashboard',
@@ -160,40 +160,40 @@ export default {
     const statistics = ref([])
     const profileCompletion = ref(0)
 
-    const fetchDashboardData = async () => {
-      loading.value = true
-      error.value = null
-      
-      try {
-        const { measurements, stats } = await measurementsService.getRecent()
-        
-        recentMeasurements.value = measurements
-        profileCompletion.value = stats.profile_completion
+const fetchDashboardData = async () => {
+  loading.value = true
+  error.value = null
+  
+  try {
+    const { measurements, stats } = await measurementService.getRecent()
+    
+    recentMeasurements.value = measurements
+    profileCompletion.value = stats.profile_completion
 
-        statistics.value = [
-          {
-            name: 'Total Measurements',
-            value: stats.total_measurements.toString(),
-            icon: ChartBarIcon
-          },
-          {
-            name: 'Last Updated',
-            value: stats.last_updated || 'Never',
-            icon: ClockIcon
-          },
-          {
-            name: 'Profile Completion',
-            value: `${stats.profile_completion}%`,
-            icon: UserIcon
-          }
-        ]
-      } catch (err) {
-        error.value = 'Failed to load dashboard data. Please try again.'
-        console.error('Dashboard data error:', err)
-      } finally {
-        loading.value = false
+    statistics.value = [
+      {
+        name: 'Total Measurements',
+        value: stats.total_measurements.toString(),
+        icon: ChartBarIcon
+      },
+      {
+        name: 'Last Updated',
+        value: stats.last_updated || 'Never',
+        icon: ClockIcon
+      },
+      {
+        name: 'Profile Completion',
+        value: `${stats.profile_completion}%`,
+        icon: UserIcon
       }
-    }
+    ]
+  } catch (err) {
+    error.value = 'Failed to load dashboard data. Please try again.'
+    console.error('Dashboard data error:', err)
+  } finally {
+    loading.value = false
+  }
+}
 
     onMounted(() => {
       fetchDashboardData()

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_11_03_165300) do
+ActiveRecord::Schema[7.2].define(version: 2024_12_13_231916) do
   create_table "body_scans", force: :cascade do |t|
     t.integer "user_id", null: false
     t.float "shoulder_width"
@@ -32,12 +32,10 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_03_165300) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "jwt_denylists", force: :cascade do |t|
-    t.string "jti"
-    t.datetime "exp"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["jti"], name: "index_jwt_denylists_on_jti"
+  create_table "jwt_denylist", force: :cascade do |t|
+    t.string "jti", null: false
+    t.datetime "exp", null: false
+    t.index ["jti"], name: "index_jwt_denylist_on_jti"
   end
 
   create_table "measurements", force: :cascade do |t|
@@ -49,7 +47,21 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_03_165300) do
     t.float "hips"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "measurement_type"
+    t.decimal "face_width"
+    t.decimal "temple_length"
+    t.decimal "bridge_width"
+    t.string "face_shape"
+    t.decimal "foot_length"
+    t.decimal "foot_width"
+    t.decimal "arch_height"
+    t.string "arch_type"
+    t.decimal "wrist_circumference"
+    t.decimal "wrist_width"
     t.index ["created_at"], name: "index_measurements_on_created_at"
+    t.index ["measurement_type", "created_at"], name: "index_measurements_on_type_and_created_at"
+    t.index ["measurement_type"], name: "index_measurements_on_measurement_type"
+    t.index ["user_id", "measurement_type"], name: "index_measurements_on_user_id_and_measurement_type"
     t.index ["user_id"], name: "index_measurements_on_user_id"
   end
 
@@ -67,31 +79,31 @@ ActiveRecord::Schema[7.2].define(version: 2024_11_03_165300) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.string "name"
-    t.string "email"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
+    t.string "name", default: "", null: false
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
-    t.boolean "allow_password_change", default: false
-    t.string "confirmation_token"
-    t.datetime "confirmed_at"
-    t.datetime "confirmation_sent_at"
-    t.string "unconfirmed_email"
-    t.string "nickname"
-    t.string "image"
-    t.text "tokens"
-    t.string "provider", default: "email", null: false
-    t.string "uid", default: "", null: false
     t.integer "sign_in_count", default: 0, null: false
     t.datetime "current_sign_in_at"
     t.datetime "last_sign_in_at"
     t.string "current_sign_in_ip"
     t.string "last_sign_in_ip"
+    t.string "provider", default: "email", null: false
+    t.string "uid", default: "", null: false
+    t.json "tokens"
+    t.string "confirmation_token"
+    t.datetime "confirmed_at"
+    t.datetime "confirmation_sent_at"
+    t.string "unconfirmed_email"
+    t.boolean "allow_password_change", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "jti", null: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["jti"], name: "index_users_on_jti", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end

@@ -1,59 +1,33 @@
+# app/models/user.rb
 class User < ApplicationRecord
-  # Include devise token auth concerns
-  include DeviseTokenAuth::Concerns::User
+  include Devise::JWT::RevocationStrategies::JTIMatcher
   
-  # Add token serialization with proper coder for Rails 7
-  serialize :tokens, coder: JSON
-
-  # Include devise modules
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
-         :trackable  # Removed :confirmable
+         :jwt_authenticatable, jwt_revocation_strategy: self
 
-  # Validations
+  before_create :initialize_jti
+         
   validates :email, presence: true, 
                    uniqueness: { case_sensitive: false },
                    format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :name, presence: true
-  validates :password, presence: true, 
-                      length: { minimum: 6 },
-                      if: :password_required?
-  validates :password_confirmation, presence: true,
-                                  if: :password_required?
+  validates :name, presence: true, length: { minimum: 2 }
 
-  # Initialize tokens hash
-  after_initialize :set_default_tokens, if: :new_record?
+  has_many :measurements, dependent: :destroy
+  has_many :user_measurements, dependent: :destroy
 
-  def as_json(options = {})
-    options = {
-      except: [:encrypted_password, :tokens, :created_at, :updated_at],
-      methods: [:uid, :provider]
-    }.merge(options)
-    
-    super(options)
-  end
-
-  protected
-
-  def confirmation_required?
-    false
-  end
-
-  def password_required?
-    !persisted? || !password.nil? || !password_confirmation.nil?
-  end
-
-  def active_for_authentication?
-    super && !disabled?
+  def generate_jwt
+    JWT.encode({
+      id: id,
+      email: email,
+      jti: jti,
+      exp: 24.hours.from_now.to_i
+    }, Rails.application.credentials.secret_key_base)
   end
 
   private
 
-  def disabled?
-    false
-  end
-
-  def set_default_tokens
-    self.tokens ||= {}
+  def initialize_jti
+    self.jti ||= SecureRandom.uuid
   end
 end
